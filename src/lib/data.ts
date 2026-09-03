@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma, Category } from '@prisma/client'
 
 // Builds the Prisma where-clause fragment for "items this session user may see".
 // PARENT -> everyone's items, plus anything shared to "Parents" collectively.
@@ -59,19 +59,21 @@ export async function getBucketItems(
   category?: string | null
 ) {
   const range = bucketRange(bucket, weekOffset)
-  const categoryFilter = category ? { category } : {}
+  const cat = category as Category | undefined
+  const eventCategoryFilter: Prisma.EventWhereInput = cat ? { category: cat } : {}
+  const taskCategoryFilter: Prisma.TaskWhereInput = cat ? { category: cat } : {}
 
   const [events, tasks] = await Promise.all([
     // Events only apply to the current week's buckets (no "future weeks" concept for events yet).
     bucket !== 'week' || weekOffset === 0
       ? prisma.event.findMany({
-          where: { AND: [eventVisibilityWhere(role, ownId), { startTime: range }, categoryFilter] },
+          where: { AND: [eventVisibilityWhere(role, ownId), { startTime: range }, eventCategoryFilter] },
           include: { owner: true },
           orderBy: { startTime: 'asc' },
         })
       : Promise.resolve([]),
     prisma.task.findMany({
-      where: { AND: [visibilityWhere(role, ownId), { status: 'OPEN' }, { dueDate: range }, categoryFilter] },
+      where: { AND: [visibilityWhere(role, ownId), { status: 'OPEN' }, { dueDate: range }, taskCategoryFilter] },
       include: { assignee: true },
       orderBy: { dueDate: 'asc' },
     }),
