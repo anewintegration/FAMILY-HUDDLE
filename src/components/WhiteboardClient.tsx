@@ -41,7 +41,7 @@ export default function WhiteboardClient({
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-5">
+    <div className="max-w-6xl mx-auto px-4 py-5">
       <p className="font-display text-xl font-semibold text-charcoal mb-1">Family Whiteboard</p>
       <p className="text-xs text-charcoal-muted mb-4">
         A running space for ideas, questions, and things on your mind. Anyone can post.

@@ -30,7 +30,7 @@ export default async function ParentsPage() {
   return (
     <main className="min-h-screen bg-cream">
       <Header openTaskCount={openTaskCount} role={user.role} slug={user.slug} />
-      <div className="max-w-3xl mx-auto px-4 py-5">
+      <div className="max-w-6xl mx-auto px-4 py-5">
         <p className="font-display text-xl font-semibold text-charcoal mb-4">Parents</p>
 
         <p className="text-[13px] font-semibold text-charcoal mb-2">Upcoming</p>

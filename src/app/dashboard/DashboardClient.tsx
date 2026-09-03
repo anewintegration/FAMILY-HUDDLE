@@ -110,7 +110,7 @@ export default function DashboardClient({
   const categoryOptions = categoriesForSlug(ownerForCategoryOptions)
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-5">
+    <div className="max-w-6xl mx-auto px-4 py-5">
       {activeCategory && categoryById[activeCategory as keyof typeof categoryById] && (
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xs text-charcoal-muted">Filtered to</span>

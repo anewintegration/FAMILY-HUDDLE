@@ -51,7 +51,7 @@ export default function ChecklistPageClient({
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-5">
+    <div className="max-w-6xl mx-auto px-4 py-5">
       <p className="font-display text-xl font-semibold text-charcoal mb-1">{title}</p>
       <p className="text-xs text-charcoal-muted mb-4">{subtitle}</p>
 

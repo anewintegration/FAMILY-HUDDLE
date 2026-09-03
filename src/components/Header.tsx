@@ -44,7 +44,7 @@ export default function Header({
 
   return (
     <header className="bg-cream border-b border-cream-border sticky top-0 z-10">
-      <div className="max-w-3xl mx-auto px-4 pt-4">
+      <div className="max-w-6xl mx-auto px-4 pt-4">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sage to-terracotta flex items-center justify-center shrink-0 shadow-md">

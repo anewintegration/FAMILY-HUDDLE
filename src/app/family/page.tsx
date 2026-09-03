@@ -26,7 +26,7 @@ export default async function FamilyPage() {
   return (
     <main className="min-h-screen bg-cream">
       <Header openTaskCount={openTaskCount} role={user.role} slug={user.slug} />
-      <div className="max-w-3xl mx-auto px-4 py-5">
+      <div className="max-w-6xl mx-auto px-4 py-5">
         <p className="font-display text-xl font-semibold text-charcoal mb-1">Family</p>
         <p className="text-xs text-charcoal-muted mb-4">Everyone's world, at a glance.</p>
         <div className="flex flex-col gap-3">
