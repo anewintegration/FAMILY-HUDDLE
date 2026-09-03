@@ -1,0 +1,123 @@
+// Family Dashboard schema
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PARENT // Mom or Dad - full visibility
+  CHILD  // Benjamin or Bradley - restricted to own items
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
+// Category taxonomy differs by who the item belongs to:
+// kids get SPORTS/HEALTH/SCHOOL/FRIENDS/FAMILY, parents get FAMILY/WORK/PERSONAL.
+// Both share FAMILY. Enforced in the UI, not the DB, so it stays flexible.
+enum Category {
+  SPORTS
+  HEALTH
+  SCHOOL
+  FRIENDS
+  FAMILY
+  WORK
+  PERSONAL
+}
+
+enum ChecklistKind {
+  GOAL        // "September Goals" style, monthly
+  BUCKET_LIST // "Family Bucket List", no deadline
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  role         Role
+  // slug is used for routing e.g. /dad, /mom, /benjamin, /bradley
+  slug         String   @unique
+  color        String   @default("#378ADD") // used for calendar dot / avatar
+  createdAt    DateTime @default(now())
+
+  tasksAssigned Task[]           @relation("AssignedTasks")
+  tasksCreated  Task[]           @relation("CreatedTasks")
+  events        Event[]
+  whiteboardPosts WhiteboardPost[]
+  checklistItems  ChecklistItem[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  notes       String?
+  status      TaskStatus @default(OPEN)
+  category    Category?
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  completedAt DateTime?
+
+  // Either assigneeId is set (task belongs to one person) OR sharedParents
+  // is true (task belongs to "Parents" collectively - both Mom and Dad see it).
+  assignee    User?   @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  assigneeId  String?
+  sharedParents Boolean @default(false)
+
+  createdBy   User   @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdById String
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  category    Category?
+  startTime   DateTime
+  endTime     DateTime?
+  allDay      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  owner         User?   @relation(fields: [ownerId], references: [id])
+  ownerId       String?
+  sharedParents Boolean @default(false)
+}
+
+// "Mom & Dad Top of Mind" - free-form running notes, parents only.
+model TopOfMindNote {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+}
+
+// Powers both "September Goals" and "Family Bucket List" via `kind`.
+model ChecklistItem {
+  id        String        @id @default(cuid())
+  kind      ChecklistKind
+  text      String
+  done      Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+}
+
+// Family Whiteboard - open running feed anyone in the family can post to.
+model WhiteboardPost {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+}
+
