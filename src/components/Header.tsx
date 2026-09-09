@@ -25,6 +25,7 @@ export default function Header({
 
   const parentTabs: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/calendar', label: 'Calendar' },
     { href: '/family', label: 'Family' },
     { href: '/mom-and-dad', label: 'Parents' },
     { href: '/benjamin', label: 'Benjamin' },
@@ -35,7 +36,10 @@ export default function Header({
     { href: '/bucket-list', label: 'Family Bucket List', special: 'terracotta' },
   ]
 
-  const childTabs: NavItem[] = [{ href: '/dashboard', label: 'Dashboard' }]
+  const childTabs: NavItem[] = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/calendar', label: 'Calendar' },
+  ]
 
   const tabs = role === 'PARENT' ? parentTabs : childTabs
 

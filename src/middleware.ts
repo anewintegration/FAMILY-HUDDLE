@@ -14,6 +14,7 @@ export default withAuth(
       const ownPage = `/${token.slug}`
       const allowed =
         path === '/dashboard' ||
+        path === '/calendar' ||
         path === ownPage ||
         path === '/whiteboard' ||
         path === '/tasks' ||
@@ -38,6 +39,7 @@ export default withAuth(
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/calendar/:path*',
     '/family/:path*',
     '/mom-and-dad/:path*',
     '/benjamin/:path*',

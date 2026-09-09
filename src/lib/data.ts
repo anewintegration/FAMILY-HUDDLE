@@ -123,3 +123,25 @@ export async function getWhiteboardPosts() {
     take: 100,
   })
 }
+
+// Everything visible to this user within a given calendar month (0-indexed month,
+// matching JS Date convention). Used by the /calendar month-grid view.
+export async function getMonthItems(role: string, ownId: string, year: number, month: number) {
+  const start = new Date(year, month, 1)
+  const end = new Date(year, month + 1, 1)
+
+  const [events, tasks] = await Promise.all([
+    prisma.event.findMany({
+      where: { AND: [eventVisibilityWhere(role, ownId), { startTime: { gte: start, lt: end } }] },
+      include: { owner: true },
+      orderBy: { startTime: 'asc' },
+    }),
+    prisma.task.findMany({
+      where: { AND: [visibilityWhere(role, ownId), { dueDate: { gte: start, lt: end } }] },
+      include: { assignee: true },
+      orderBy: { dueDate: 'asc' },
+    }),
+  ])
+
+  return { events, tasks }
+}
