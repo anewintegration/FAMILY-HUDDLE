@@ -50,6 +50,7 @@ export default function DashboardClient({
   const router = useRouter()
   const isParent = role === 'PARENT'
   const [showAdd, setShowAdd] = useState(false)
+  const [viewFilter, setViewFilter] = useState<'all' | 'tasks' | 'events'>('all')
   const [title, setTitle] = useState('')
   const [owner, setOwner] = useState(currentUserSlug)
   const [category, setCategory] = useState('')
@@ -167,19 +168,36 @@ export default function DashboardClient({
         />
       </div>
 
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
         <p className="font-display text-[15px] font-semibold" style={{ color: BUCKET_ACCENT[bucket] }}>
           {bucket === 'week' ? `This Week's Must Do — ${weekLabel}` : `${BUCKET_LABEL[bucket]}'s Must Do`}
         </p>
-        {!showAdd && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="text-xs font-semibold px-2.5 py-1 rounded-md border bg-white"
-            style={{ color: BUCKET_ACCENT[bucket], borderColor: `${BUCKET_ACCENT[bucket]}66` }}
-          >
-            + Add task
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-md border overflow-hidden" style={{ borderColor: `${BUCKET_ACCENT[bucket]}55` }}>
+            {(['all', 'events', 'tasks'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setViewFilter(v)}
+                className="text-xs font-semibold px-2.5 py-1"
+                style={{
+                  background: viewFilter === v ? BUCKET_ACCENT[bucket] : '#fff',
+                  color: viewFilter === v ? '#fff' : BUCKET_ACCENT[bucket],
+                }}
+              >
+                {v === 'all' ? 'All' : v === 'events' ? 'Events' : 'Tasks'}
+              </button>
+            ))}
+          </div>
+          {!showAdd && (
+            <button
+              onClick={() => setShowAdd(true)}
+              className="text-xs font-semibold px-2.5 py-1 rounded-md border bg-white"
+              style={{ color: BUCKET_ACCENT[bucket], borderColor: `${BUCKET_ACCENT[bucket]}66` }}
+            >
+              + Add task
+            </button>
+          )}
+        </div>
       </div>
 
       {showAdd && (
@@ -241,62 +259,72 @@ export default function DashboardClient({
       )}
 
       <div className="card p-4 mb-5">
-        {selected.events.length === 0 && selected.tasks.length === 0 && (
-          <p className="text-sm text-charcoal-faint">
-            {bucket === 'week' && weekOffset > 0 ? 'Nothing imported yet for this week.' : 'Nothing here.'}
-          </p>
-        )}
+        {(() => {
+          const showEvents = viewFilter !== 'tasks'
+          const showTasks = viewFilter !== 'events'
+          const visibleEvents = showEvents ? selected.events : []
+          const visibleTasks = showTasks ? selected.tasks : []
+          return (
+            <>
+              {visibleEvents.length === 0 && visibleTasks.length === 0 && (
+                <p className="text-sm text-charcoal-faint">
+                  {bucket === 'week' && weekOffset > 0 ? 'Nothing imported yet for this week.' : 'Nothing here.'}
+                </p>
+              )}
 
-        {selected.events.length > 0 && (
-          <div className={selected.tasks.length > 0 ? 'mb-4' : ''}>
-            <p className="text-[10px] font-bold tracking-widest text-charcoal-faint uppercase mb-2">Schedule</p>
-            {selected.events.map((e) => (
-              <div
-                key={e.id}
-                className="flex items-center gap-3 px-3 py-2.5 mb-2 bg-white border border-cream-border rounded-lg shadow-sm"
-              >
-                <div
-                  className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                  style={{ background: e.ownerColor }}
-                >
-                  {e.ownerInitial}
-                </div>
-                <span className="text-xs font-semibold text-charcoal-muted w-14 shrink-0">{e.time}</span>
-                <span className="text-sm flex-1">{isParent ? `${e.ownerName}: ${e.title}` : e.title}</span>
-                {e.category && <CategoryBadge id={e.category} />}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {selected.tasks.length > 0 && (
-          <div>
-            <p className="text-[10px] font-bold tracking-widest text-charcoal-faint uppercase mb-2">Tasks</p>
-            {selected.tasks.map((t) => {
-              const status = taskStatus({ status: t.status, dueDate: t.dueDate ? new Date(t.dueDate) : null })
-              return (
-                <div key={t.id} className="px-3 py-2.5 mb-2 bg-white border border-cream-border rounded-lg shadow-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <button onClick={() => toggleTask(t.id, t.status)} aria-label="toggle task" className="shrink-0">
-                        <Checkbox done={t.status === 'DONE'} />
-                      </button>
-                      <span className={`text-sm truncate ${t.status === 'DONE' ? 'line-through text-charcoal-faint' : ''}`}>
-                        {isParent ? `${t.ownerName}: ${t.title}` : t.title}
-                      </span>
-                      {t.category && <CategoryBadge id={t.category} />}
+              {visibleEvents.length > 0 && (
+                <div className={visibleTasks.length > 0 ? 'mb-4' : ''}>
+                  <p className="text-[10px] font-bold tracking-widest text-charcoal-faint uppercase mb-2">Schedule</p>
+                  {visibleEvents.map((e) => (
+                    <div
+                      key={e.id}
+                      className="flex items-center gap-3 px-3 py-2.5 mb-2 bg-white border border-cream-border rounded-lg shadow-sm"
+                    >
+                      <div
+                        className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                        style={{ background: e.ownerColor }}
+                      >
+                        {e.ownerInitial}
+                      </div>
+                      <span className="text-xs font-semibold text-charcoal-muted w-14 shrink-0">{e.time}</span>
+                      <span className="text-sm flex-1">{isParent ? `${e.ownerName}: ${e.title}` : e.title}</span>
+                      {e.category && <CategoryBadge id={e.category} />}
                     </div>
-                    {status && (
-                      <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 ${status.className}`}>
-                        {status.label}
-                      </span>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              )
-            })}
-          </div>
-        )}
+              )}
+
+              {visibleTasks.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold tracking-widest text-charcoal-faint uppercase mb-2">Tasks</p>
+                  {visibleTasks.map((t) => {
+                    const status = taskStatus({ status: t.status, dueDate: t.dueDate ? new Date(t.dueDate) : null })
+                    return (
+                      <div key={t.id} className="px-3 py-2.5 mb-2 bg-white border border-cream-border rounded-lg shadow-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <button onClick={() => toggleTask(t.id, t.status)} aria-label="toggle task" className="shrink-0">
+                              <Checkbox done={t.status === 'DONE'} />
+                            </button>
+                            <span className={`text-sm truncate ${t.status === 'DONE' ? 'line-through text-charcoal-faint' : ''}`}>
+                              {isParent ? `${t.ownerName}: ${t.title}` : t.title}
+                            </span>
+                            {t.category && <CategoryBadge id={t.category} />}
+                          </div>
+                          {status && (
+                            <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 ${status.className}`}>
+                              {status.label}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )
+        })()}
       </div>
 
       {isParent && (
