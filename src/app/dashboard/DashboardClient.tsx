@@ -71,7 +71,7 @@ export default function DashboardClient({
     if (!title.trim() || busy) return
     setBusy(true)
     const dueDate = dueDateForBucket(bucket, weekOffset)
-    await fetch('/api/tasks', {
+    const res = await fetch('/api/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -81,10 +81,15 @@ export default function DashboardClient({
         dueDate,
       }),
     })
+    setBusy(false)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      alert(`Couldn't add that task: ${err.error || res.statusText}`)
+      return
+    }
     setTitle('')
     setCategory('')
     setShowAdd(false)
-    setBusy(false)
     router.refresh()
   }
 

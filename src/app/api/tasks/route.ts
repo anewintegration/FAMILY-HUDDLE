@@ -25,8 +25,19 @@ export async function POST(req: NextRequest) {
 
   // Kids may only create tasks assigned to themselves; parents can assign to
   // anyone, or to "parents" to mean "shared between Mom and Dad".
-  const sharedParents = user.role === 'PARENT' && body.assigneeId === 'parents'
-  const assigneeId = user.role === 'PARENT' ? (sharedParents ? null : body.assigneeId || user.id) : user.id
+  // The client sends a slug (e.g. "benjamin") or "parents" or "dad" - not a
+  // real database id - so we resolve it to the actual user id here.
+  const requestedSlug = user.role === 'PARENT' ? body.assigneeId || user.slug : user.slug
+  const sharedParents = user.role === 'PARENT' && requestedSlug === 'parents'
+
+  let assigneeId: string | null = null
+  if (!sharedParents) {
+    const assignee = await prisma.user.findUnique({ where: { slug: requestedSlug } })
+    if (!assignee) {
+      return NextResponse.json({ error: `No user found for "${requestedSlug}"` }, { status: 400 })
+    }
+    assigneeId = assignee.id
+  }
 
   const task = await prisma.task.create({
     data: {

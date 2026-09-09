@@ -51,6 +51,11 @@ export default function TasksClient({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, assigneeId: assigneeSlug, category: category || null, dueDate: dueDate || null }),
     })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      alert(`Couldn't add that task: ${err.error || res.statusText}`)
+      return
+    }
     const created = await res.json()
     const person = people.find((p) => p.slug === assigneeSlug)
     setTasks((prev) => [

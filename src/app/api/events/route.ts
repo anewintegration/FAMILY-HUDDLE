@@ -27,8 +27,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Title and start time are required' }, { status: 400 })
   }
 
-  const sharedParents = user.role === 'PARENT' && body.ownerId === 'parents'
-  const ownerId = user.role === 'PARENT' ? (sharedParents ? null : body.ownerId || user.id) : user.id
+  const requestedSlug = user.role === 'PARENT' ? body.ownerId || user.slug : user.slug
+  const sharedParents = user.role === 'PARENT' && requestedSlug === 'parents'
+
+  let ownerId: string | null = null
+  if (!sharedParents) {
+    const owner = await prisma.user.findUnique({ where: { slug: requestedSlug } })
+    if (!owner) {
+      return NextResponse.json({ error: `No user found for "${requestedSlug}"` }, { status: 400 })
+    }
+    ownerId = owner.id
+  }
 
   const event = await prisma.event.create({
     data: {
