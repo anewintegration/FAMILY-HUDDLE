@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PARENT
+  CHILD
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
+enum Category {
+  SPORTS
+  HEALTH
+  SCHOOL
+  FRIENDS
+  FAMILY
+  WORK
+  PERSONAL
+}
+
+enum ChecklistKind {
+  GOAL
+  BUCKET_LIST
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  role         Role
+  slug         String   @unique
+  color        String   @default("#378ADD")
+  createdAt    DateTime @default(now())
+
+  tasksAssigned   Task[]           @relation("AssignedTasks")
+  tasksCreated    Task[]           @relation("CreatedTasks")
+  events          Event[]
+  whiteboardPosts WhiteboardPost[]
+  checklistItems  ChecklistItem[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  notes       String?
+  status      TaskStatus @default(OPEN)
+  category    Category?
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  completedAt DateTime?
+
+  assignee      User?   @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  assigneeId    String?
+  sharedParents Boolean @default(false)
+  sharedFamily  Boolean @default(false)
+
+  createdBy   User   @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdById String
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  category    Category?
+  startTime   DateTime
+  endTime     DateTime?
+  allDay      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  owner         User?   @relation(fields: [ownerId], references: [id])
+  ownerId       String?
+  sharedParents Boolean @default(false)
+  sharedFamily  Boolean @default(false)
+}
+
+model TopOfMindNote {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model ChecklistItem {
+  id        String        @id @default(cuid())
+  kind      ChecklistKind
+  text      String
+  done      Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+}
+
+model WhiteboardPost {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+}
