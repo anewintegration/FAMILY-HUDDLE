@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PARENT
+  CHILD
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
+enum Category {
+  SPORTS
+  HEALTH
+  SCHOOL
+  FRIENDS
+  FAMILY
+  WORK
+  PERSONAL
+}
+
+enum ChecklistKind {
+  GOAL
+  BUCKET_LIST
+}
+
+// How often a repeating task or event comes round (see src/lib/recurrence.ts).
+enum Repeat {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  role         Role
+  slug         String   @unique
+  color        String   @default("#378ADD")
+  createdAt    DateTime @default(now())
+
+  // Which kinds of phone / computer alerts this person wants (the devices themselves are
+  // in PushSubscription). Everything starts on; each person can switch kinds off.
+  alertChanges   Boolean @default(true) // items added, moved or cancelled
+  alertDone      Boolean @default(true) // tasks finished
+  alertBoard     Boolean @default(true) // whiteboard posts
+  alertReminders Boolean @default(true) // "starts in 30 min" and the morning briefing
+
+  tasksAssigned     Task[]             @relation("AssignedTasks")
+  tasksCreated      Task[]             @relation("CreatedTasks")
+  events            Event[]
+  whiteboardPosts   WhiteboardPost[]
+  checklistItems    ChecklistItem[]
+  pushSubscriptions PushSubscription[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  notes       String?
+  status      TaskStatus @default(OPEN)
+  category    Category?
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  completedAt DateTime?
+
+  assignee      User?   @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  assigneeId    String?
+  sharedParents Boolean @default(false)
+  sharedFamily  Boolean @default(false)
+
+  createdBy   User   @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdById String
+
+  // A repeating task is a run of ordinary tasks, one per date, that share a seriesId; `repeat` says how often.
+  // Both stay empty for a one-off task.
+  seriesId String?
+  repeat   Repeat?
+
+  @@index([seriesId])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  category    Category?
+  startTime   DateTime
+  endTime     DateTime?
+  allDay      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  owner         User?   @relation(fields: [ownerId], references: [id])
+  ownerId       String?
+  sharedParents Boolean @default(false)
+  sharedFamily  Boolean @default(false)
+
+  // Same idea as on Task: a repeating event is a run of ordinary events that share a seriesId.
+  seriesId String?
+  repeat   Repeat?
+
+  @@index([seriesId])
+}
+
+model TopOfMindNote {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model ChecklistItem {
+  id        String        @id @default(cuid())
+  kind      ChecklistKind
+  text      String
+  done      Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  // Goals only: the month a goal belongs to, as "YYYY-MM". Null means the
+  // month the goal was created in.
+  month     String?
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+}
+
+model WhiteboardPost {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+}
+
+// One phone, tablet or computer that has said yes to Huddle alerts. The endpoint is the
+// push service's private address for that device; p256dh and auth are the keys that keep
+// the message readable only by that device.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@index([userId])
+}
+
+// A note that one reminder or briefing was already sent, so a restart or a second server
+// can never send it twice. Old notes are swept away after two weeks.
+model AlertLog {
+  key       String   @id
+  createdAt DateTime @default(now())
+}
+
+// A few settings the server keeps for itself (today: its push key pair, made on first use).
+model AppSetting {
+  key   String @id
+  value String
+}
